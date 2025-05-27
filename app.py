@@ -76,5 +76,4 @@ def download():
     return send_file(path, as_attachment=True)
 
 if __name__ == '__main__':
-    print("✅ Starting Flask app...")
     app.run(host='0.0.0.0', port=5000, debug=True)
