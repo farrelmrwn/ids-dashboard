@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>IDS Prediction Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🚨 Intrusion Detection System - ML Prediction</h1>
+
+    <!-- Upload form -->
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
+      <label for="file-upload" class="file-label">Select CSV file:</label>
+      <input id="file-upload" type="file" name="file" accept=".csv" required />
+
+      <label for="dataset-select" class="file-label" style="margin-left: 20px;">Select Dataset:</label>
+      <select id="dataset-select" name="dataset" required>
+        <option value="unsw">UNSW NB15</option>
+        <option value="nslkdd">NSL KDD</option>
+      </select>
+
+      <button type="submit" class="btn" style="margin-left: 20px;">🔍 Predict</button>
+    </form>
+
+    <!-- Prediction Table -->
+    {% if tables %}
+      <h2>📊 Prediction Results (Top 50 Rows)</h2>
+      <div class="table-container">
+        {{ tables|safe }}
+      </div>
+      <a href="{{ url_for('download', path=download_link) }}" class="download-link">⬇️ Download Full Results</a>
+    {% endif %}
+
+    <!-- Metrics Table -->
+    {% if metrics_table %}
+      <h2>📐 Evaluation Metrics per Model</h2>
+      <div class="table-container">
+        {{ metrics_table|safe }}
+      </div>
+    {% endif %}
+
+    <!-- Charts -->
+    {% if chart_data %}
+      <div class="charts-wrapper">
+        <div class="chart-section">
+          <h2>📈 Accuracy per Model (%)</h2>
+          <canvas id="accuracyChart" width="600" height="300"></canvas>
+        </div>
+
+        <div class="chart-section">
+          <h2>🎯 F1 Score (Macro Average %)</h2>
+          <canvas id="f1Chart" width="600" height="300"></canvas>
+        </div>
+
+        <div class="chart-section">
+          <h2>⚡ Latency per Model (ms)</h2>
+          <canvas id="latencyChart" width="600" height="300"></canvas>
+        </div>
+      </div>
+
+      <script id="chart-data" type="application/json">
+        {{ chart_data | tojson }}
+      </script>
+
+      <script>
+        const raw = document.getElementById("chart-data").textContent;
+        const chartData = JSON.parse(raw);
+
+        const createChart = (elementId, datasetIndex, label, color) => {
+          return new Chart(document.getElementById(elementId), {
+            type: 'bar',
+            data: {
+              labels: chartData.labels,
+              datasets: [{
+                label: label,
+                data: chartData.datasets[datasetIndex].data,
+                backgroundColor: color,
+                borderColor: color.replace('0.6', '1'),
+                borderWidth: 1,
+                borderRadius: 5,
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: label }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: { display: true, text: 'Value' },
+                  ticks: { font: { size: 14 } }
+                },
+                x: {
+                  title: { display: true, text: 'Model' },
+                  ticks: { font: { size: 14 } }
+                }
+              }
+            }
+          });
+        };
+
+        createChart('accuracyChart', 0, 'Accuracy (%)', 'rgba(75, 192, 192, 0.6)');
+        createChart('f1Chart', 1, 'F1 Score Macro Avg (%)', 'rgba(153, 102, 255, 0.6)');
+        createChart('latencyChart', 2, 'Latency (ms)', 'rgba(255, 99, 132, 0.6)');
+      </script>
+    {% endif %}
+  </div>
+</body>
+</html>
